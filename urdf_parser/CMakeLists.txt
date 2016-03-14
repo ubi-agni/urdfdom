@@ -8,7 +8,9 @@ add_library(urdfdom_model SHARED
 target_link_libraries(urdfdom_model ${TinyXML_LIBRARIES} ${console_bridge_LIBRARIES} ${Boost_LIBRARIES})
 set_target_properties(urdfdom_model PROPERTIES SOVERSION ${URDF_MAJOR_MINOR_VERSION})
 
-add_library(urdfdom_sensor SHARED src/urdf_sensor.cpp)
+add_library(urdfdom_sensor SHARED
+   src/sensor_parser.cpp src/visual_sensor_parsers.cpp
+   include/urdf_parser/sensor_parser.h include/urdf_parser/visual_sensor_parsers.h)
 target_link_libraries(urdfdom_sensor urdfdom_model)
 set_target_properties(urdfdom_sensor PROPERTIES SOVERSION ${URDF_MAJOR_MINOR_VERSION})
 

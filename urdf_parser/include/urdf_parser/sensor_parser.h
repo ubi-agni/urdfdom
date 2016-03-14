@@ -1,13 +1,13 @@
 /*********************************************************************
 * Software License Agreement (BSD License)
-*
+* 
 *  Copyright (c) 2008, Willow Garage, Inc.
 *  All rights reserved.
-*
+* 
 *  Redistribution and use in source and binary forms, with or without
 *  modification, are permitted provided that the following conditions
 *  are met:
-*
+* 
 *   * Redistributions of source code must retain the above copyright
 *     notice, this list of conditions and the following disclaimer.
 *   * Redistributions in binary form must reproduce the above
@@ -17,7 +17,7 @@
 *   * Neither the name of the Willow Garage nor the names of its
 *     contributors may be used to endorse or promote products derived
 *     from this software without specific prior written permission.
-*
+* 
 *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
@@ -32,15 +32,40 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#ifndef URDF_PARSER_SENSOR_H
-#define URDF_PARSER_SENSOR_H
+/* Author: Robert Haschke */
 
-#include <urdf_sensor/sensor.h>
+#ifndef URDF_PARSER_URDF_SENSOR_PARSER_H
+#define URDF_PARSER_URDF_SENSOR_PARSER_H
+
+#include <string>
+#include <map>
 #include <tinyxml.h>
+#include <urdf_sensor/types.h>
+
+#include "exportdecl.h"
 
 namespace urdf {
 
-bool parseSensor(Sensor &sensor, TiXmlElement* config);
+  URDF_TYPEDEF_CLASS_POINTER(SensorParser);
+  class URDFDOM_DLLAPI SensorParser {
+  public:
+    virtual ~SensorParser() {}
+    virtual SensorBaseSharedPtr parse(TiXmlElement &sensor_element) = 0;
+  };
+
+  typedef std::map<std::string, SensorSharedPtr> SensorMap;
+  typedef std::map<std::string, SensorParserSharedPtr> SensorParserMap;
+
+  /** parse <sensor> tags in URDF document for which a parser exists in SensorParserMap */
+  URDFDOM_DLLAPI SensorMap parseSensors(TiXmlDocument &urdf,  const SensorParserMap &parsers);
+
+  /** convienency function to fetch a sensor with given name and type from the map */
+  template <typename T>
+  URDFDOM_DLLAPI boost::shared_ptr<T> getSensor(const std::string &name, SensorMap &sensors) {
+    SensorMap::iterator s = sensors.find(name);
+    if (s == sensors.end()) return boost::shared_ptr<T>();
+    else return boost::dynamic_pointer_cast<T>(s->second->sensor_);
+  }
 
 }
 
