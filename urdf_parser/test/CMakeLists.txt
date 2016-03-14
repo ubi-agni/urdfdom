@@ -38,6 +38,7 @@ foreach(GTEST_SOURCE_file ${tests})
   endif()
 
   add_test(NAME    ${BINARY_NAME}
+           WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
            COMMAND ${BINARY_NAME}
                    --gtest_output=xml:${CMAKE_BINARY_DIR}/test_results/${BINARY_NAME}.xml)
 
