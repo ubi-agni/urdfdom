@@ -271,7 +271,7 @@ TiXmlDocument*  exportURDF(const ModelInterface &model)
     CONSOLE_BRIDGE_logDebug("urdfdom: exporting link [%s]\n",l->second->name.c_str());
     exportLink(*(l->second), robot);
   }
-  	
+
   for (std::map<std::string, JointSharedPtr>::const_iterator j=model.joints_.begin(); j!=model.joints_.end(); j++)  
   {
     CONSOLE_BRIDGE_logDebug("urdfdom: exporting joint [%s]\n",j->second->name.c_str());

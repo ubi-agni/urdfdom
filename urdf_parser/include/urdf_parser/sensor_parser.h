@@ -32,15 +32,41 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 *********************************************************************/
 
-#ifndef URDF_PARSER_SENSOR_H
-#define URDF_PARSER_SENSOR_H
+/* Author: Robert Haschke */
 
-#include <urdf_sensor/sensor.h>
+#ifndef URDF_PARSER_URDF_SENSOR_PARSER_H
+#define URDF_PARSER_URDF_SENSOR_PARSER_H
+
+#include <string>
+#include <map>
 #include <tinyxml.h>
+#include <urdf_sensor/types.h>
+#include <boost/shared_ptr.hpp>
+
+#include "exportdecl.h"
 
 namespace urdf {
 
-bool parseSensor(Sensor &sensor, TiXmlElement* config);
+  class URDFDOM_DLLAPI SensorParser {
+  public:
+    virtual ~SensorParser() {}
+    virtual SensorBaseSharedPtr parse(TiXmlElement &sensor_element) = 0;
+  };
+  typedef boost::shared_ptr<SensorParser> SensorParserSharedPtr; \
+
+  typedef std::map<std::string, SensorSharedPtr> SensorMap;
+  typedef std::map<std::string, SensorParserSharedPtr> SensorParserMap;
+
+  /** parse <sensor> tags in URDF document for which a parser exists in SensorParserMap */
+  URDFDOM_DLLAPI SensorMap parseSensors(TiXmlDocument &urdf,  const SensorParserMap &parsers);
+
+  /** convienency function to fetch a sensor with given name and type from the map */
+  template <typename T>
+  URDFDOM_DLLAPI std::shared_ptr<T> getSensor(const std::string &name, const SensorMap &sensors) {
+    SensorMap::const_iterator s = sensors.find(name);
+    if (s == sensors.end()) return std::shared_ptr<T>();
+    else return std::dynamic_pointer_cast<T>(s->second->sensor_);
+  }
 
 }
 
