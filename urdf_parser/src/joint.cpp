@@ -35,15 +35,14 @@
 /* Author: John Hsu */
 
 #include <sstream>
-#include <urdf_model/joint.h>
 #include <boost/lexical_cast.hpp>
 #include <console_bridge/console.h>
 #include <tinyxml.h>
-#include <urdf_parser/urdf_parser.h>
+#include "urdf_parser/urdf_parser.h"
+#include "urdf_parser/joint.h"
+#include "urdf_parser/pose.h"
 
 namespace urdf{
-
-bool parsePose(Pose &pose, TiXmlElement* xml);
 
 bool parseJointDynamics(JointDynamics &jd, TiXmlElement* config)
 {
@@ -561,10 +560,6 @@ bool parseJoint(Joint &joint, TiXmlElement* config)
 
   return true;
 }
-
-
-/* exports */
-bool exportPose(Pose &pose, TiXmlElement* xml);
 
 bool exportJointDynamics(JointDynamics &jd, TiXmlElement* xml)
 {

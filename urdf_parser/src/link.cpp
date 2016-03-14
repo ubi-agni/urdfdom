@@ -35,8 +35,9 @@
 /* Author: Wim Meeussen */
 
 
-#include <urdf_parser/urdf_parser.h>
-#include <urdf_model/link.h>
+#include "urdf_parser/urdf_parser.h"
+#include "urdf_parser/pose.h"
+#include "urdf_parser/link.h"
 #include <fstream>
 #include <sstream>
 #include <boost/lexical_cast.hpp>
@@ -45,8 +46,6 @@
 #include <console_bridge/console.h>
 
 namespace urdf{
-
-bool parsePose(Pose &pose, TiXmlElement* xml);
 
 bool parseMaterial(Material &material, TiXmlElement *config, bool only_name_is_ok)
 {
@@ -483,9 +482,6 @@ bool parseLink(Link &link, TiXmlElement* config)
 
   return true;
 }
-
-/* exports */
-bool exportPose(Pose &pose, TiXmlElement* xml);
 
 bool exportMaterial(Material &material, TiXmlElement *xml)
 {
