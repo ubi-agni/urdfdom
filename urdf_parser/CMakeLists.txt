@@ -10,7 +10,7 @@ set_target_properties(urdfdom_model PROPERTIES SOVERSION ${URDF_MAJOR_MINOR_VERS
 
 add_library(urdfdom_sensor SHARED
    src/sensor_parser.cpp src/visual_sensor_parsers.cpp
-   include/urdf_parser/sensor_parser.h include/urdf_parser/visual_sensor_parsers.h)
+   include/urdf_parser/sensor_parser.h include/urdf_parser/visual_sensor_parsers.h include/urdf_parser/utils.h)
 target_link_libraries(urdfdom_sensor urdfdom_model)
 set_target_properties(urdfdom_sensor PROPERTIES SOVERSION ${URDF_MAJOR_MINOR_VERSION})
 
