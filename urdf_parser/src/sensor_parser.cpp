@@ -38,6 +38,7 @@
 #include "urdf_parser/sensor_parser.h"
 
 #include "urdf_parser/pose.h"
+#include "urdf_parser/utils.h"
 #include <urdf_sensor/camera.h>
 #include <urdf_sensor/ray.h>
 #include <console_bridge/console.h>
@@ -84,13 +85,15 @@ bool parseSensor(Sensor &sensor, TiXmlElement* config, const SensorParserMap &pa
 {
   sensor.clear();
 
-  const char *name_char = config->Attribute("name");
-  if (!name_char)
-  {
-    CONSOLE_BRIDGE_logError("No name given for the sensor.");
+  try {
+    const std::string empty;
+    sensor.name_ = parseAttribute<std::string>(*config, "name");
+    sensor.group_ = parseAttribute<std::string>(*config, "group", &empty);
+  } catch (const std::exception &e) {
+    CONSOLE_BRIDGE_logError("Failed to parse sensor attributes: %s", e.what());
     return false;
   }
-  sensor.name_ = std::string(name_char);
+
 
   // parse parent link name
   TiXmlElement *parent_xml = config->FirstChildElement("parent");

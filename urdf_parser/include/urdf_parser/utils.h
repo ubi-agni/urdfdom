@@ -42,6 +42,7 @@
 
 namespace urdf {
 
+/* attribute parsing is accomplished by boost::lexical_cast by default */
 template <typename T>
 T parseAttribute(const char* value);
 
@@ -63,6 +64,10 @@ inline unsigned int parseAttribute<unsigned int>(const char* value)
   return std::stoul(value);
 }
 
+/** Check existence of an attribute called attr and parse its values as T.
+ *  If there is no such attribute, return *default_value if not NULL.
+ *  Otherwise throw a ParseError.
+ */
 template <typename T>
 T parseAttribute(const TiXmlElement &tag, const char* attr, const T* default_value=NULL)
 {
