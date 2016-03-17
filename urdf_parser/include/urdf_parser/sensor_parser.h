@@ -61,8 +61,8 @@ namespace urdf {
 
   /** convienency function to fetch a sensor with given name and type from the map */
   template <typename T>
-  URDFDOM_DLLAPI boost::shared_ptr<T> getSensor(const std::string &name, SensorMap &sensors) {
-    SensorMap::iterator s = sensors.find(name);
+  URDFDOM_DLLAPI boost::shared_ptr<T> getSensor(const std::string &name, const SensorMap &sensors) {
+    SensorMap::const_iterator s = sensors.find(name);
     if (s == sensors.end()) return boost::shared_ptr<T>();
     else return boost::dynamic_pointer_cast<T>(s->second->sensor_);
   }

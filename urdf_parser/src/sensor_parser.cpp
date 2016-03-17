@@ -68,12 +68,12 @@ SensorBaseSharedPtr parseSensorBase(TiXmlElement *sensor_xml, const SensorParser
     }
     else
     {
-      CONSOLE_BRIDGE_logDebug("Unknown sensor type %s", sensor_type);
+      CONSOLE_BRIDGE_logDebug("Unknown sensor type: %s", sensor_type);
     }
   }
   else
   {
-    CONSOLE_BRIDGE_logError("no child element defining the sensor");
+    CONSOLE_BRIDGE_logError("No child element defining the sensor.");
   }
 
   return sensor_;
