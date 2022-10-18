@@ -1,11 +1,15 @@
 #include <gtest/gtest.h>
 #include <iostream>
+#include <fstream>
 #include <iomanip>
 #include <cmath>
 #include <vector>
 
 #include "urdf_model/pose.h"
+#include "urdf_sensor/camera.h"
+#include "urdf_sensor/ray.h"
 #include "urdf_parser/urdf_parser.h"
+#include "urdf_parser/visual_sensor_parsers.h"
 
 #ifndef M_PI
   # define M_PI 3.141592653589793
@@ -27,19 +31,6 @@ bool quat_are_near(urdf::Rotation left, urdf::Rotation right)
           std::abs(l[3] + r[3]) < epsilon);
 }
 
-std::ostream &operator<<(std::ostream &os, const urdf::Rotation& rot)
-{
-  double roll, pitch, yaw;
-  double x, y, z, w;
-  rot.getRPY(roll, pitch, yaw);
-  rot.getQuaternion(x, y, z, w);
-  os << std::setprecision(9)
-     << "x: " << x << " y: " << y << " z: " << z << " w: " <<  w
-     << "  roll: "  << roll << " pitch: " << pitch << " yaw: "<< yaw;
-  return os;
-}
-
-
 void check_get_set_rpy_is_idempotent(double x, double y, double z, double w)
 {
   urdf::Rotation rot0;
@@ -48,12 +39,6 @@ void check_get_set_rpy_is_idempotent(double x, double y, double z, double w)
   rot0.getRPY(roll, pitch, yaw);
   urdf::Rotation rot1;
   rot1.setFromRPY(roll, pitch, yaw);
-  if (true) {
-    std::cout << "\n"
-              << "before  " << rot0 << "\n"
-              << "after   " << rot1 << "\n"
-              << "ok      " << quat_are_near(rot0, rot1) << "\n";
-  }
   EXPECT_TRUE(quat_are_near(rot0, rot1));
 }
 
@@ -66,12 +51,6 @@ void check_get_set_rpy_is_idempotent_from_rpy(double r, double p, double y)
   urdf::Rotation rot1;
   rot1.setFromRPY(roll, pitch, yaw);
   bool ok = quat_are_near(rot0, rot1);
-  if (!ok) {
-    std::cout << "initial rpy: " << r << " " << p << " " << y << "\n"
-              << "before  " << rot0 << "\n"
-              << "after   " << rot1 << "\n"
-              << "ok      " << ok << "\n";
-  }
   EXPECT_TRUE(ok);
 }
 
@@ -272,7 +251,6 @@ TEST(URDF_UNIT_TEST, parse_link_doubles)
   EXPECT_EQ(0.908, urdf->links_["l1"]->inertial->izz);
 }
 
-
 TEST(URDF_UNIT_TEST, parse_color_doubles)
 {
   std::string joint_str =
@@ -346,6 +324,67 @@ TEST(URDF_UNIT_TEST, parse_color_doubles)
   EXPECT_EQ(0.908, urdf->links_["l1"]->inertial->izz);
 }
 
+TEST(URDF_UNIT_TEST, material_no_name)
+{
+  std::string joint_str =
+    "<robot name=\"test\">"
+    "  <material/>"
+    "  <link name=\"l1\"/>"
+    "</robot>";
+  urdf::ModelInterfaceSharedPtr urdf = urdf::parseURDF(joint_str);
+  ASSERT_EQ(nullptr, urdf);
+}
+
+TEST(URDF_UNIT_TEST, materials_no_rgb)
+{
+  std::string urdf_str =
+    "<robot name=\"test\">"
+    "  <material name=\"red\"/>"
+    "  <link name=\"dummy\"/>"
+    "</robot>";
+  urdf::ModelInterfaceSharedPtr urdf = urdf::parseURDF(urdf_str);
+  EXPECT_FALSE(static_cast<bool>(urdf));  // different materials cause failure
+}
+
+TEST(URDF_UNIT_TEST, duplicate_materials)
+{
+  std::string urdf_str =
+    "<robot name=\"test\">"
+    "  <material name=\"red\">"
+    "    <color rgba=\"1 0 0 1\"/>"
+    "  </material>"
+    "  <material name=\"red\">"
+    "    <color rgba=\"1 0 0 1\"/>"
+    "  </material>"
+    "  <link name=\"dummy\"/>"
+    "</robot>";
+
+  urdf::ModelInterfaceSharedPtr urdf = urdf::parseURDF(urdf_str);
+  EXPECT_TRUE(static_cast<bool>(urdf));  // identical materials are fine
+
+  urdf_str =
+    "<robot name=\"test\">"
+    "  <material name=\"red\">"
+    "    <color rgba=\"1 0 0 1\"/>"
+    "  </material>"
+    "  <material name=\"red\">"
+    "    <color rgba=\"0 1 0 1\"/>"
+    "  </material>"
+    "  <link name=\"dummy\"/>"
+    "</robot>";
+  urdf = urdf::parseURDF(urdf_str);
+  EXPECT_FALSE(static_cast<bool>(urdf));  // different materials cause failure
+}
+
+TEST(URDF_UNIT_TEST, link_no_name)
+{
+  std::string joint_str =
+    "<robot name=\"test\">"
+    "  <link/>"
+    "</robot>";
+  urdf::ModelInterfaceSharedPtr urdf = urdf::parseURDF(joint_str);
+  ASSERT_EQ(nullptr, urdf);
+}
 
 int main(int argc, char **argv)
 {
@@ -355,4 +394,59 @@ int main(int argc, char **argv)
   setlocale(LC_ALL, "");
 
   return RUN_ALL_TESTS();
+}
+
+static std::shared_ptr<TiXmlDocument> loadFromFile(const std::string &path)
+{
+  std::shared_ptr<TiXmlDocument> xml_doc;
+
+  std::ifstream stream(path.c_str());
+  if (!stream)
+    return xml_doc;
+
+  std::string xml_str((std::istreambuf_iterator<char>(stream)),
+                      std::istreambuf_iterator<char>());
+
+  xml_doc.reset(new TiXmlDocument());
+  xml_doc->Parse(xml_str.c_str());
+
+  if (xml_doc->Error())
+    return std::shared_ptr<TiXmlDocument>();
+  else
+    return xml_doc;
+}
+
+TEST(URDF_UNIT_TEST, test_sensor_parsing)
+{
+  std::shared_ptr<TiXmlDocument> xml_doc = loadFromFile("basic.urdf");
+  ASSERT_TRUE((bool)xml_doc) << "failed to load basic.urdf";
+
+  urdf::SensorParserMap parsers;
+  parsers.insert(std::make_pair("camera", urdf::SensorParserSharedPtr(new urdf::CameraParser)));
+  parsers.insert(std::make_pair("ray", urdf::SensorParserSharedPtr(new urdf::RayParser)));
+
+  urdf::SensorMap sensors = urdf::parseSensors(*xml_doc, parsers);
+
+  EXPECT_TRUE(!urdf::getSensor<urdf::Ray>("camera1", sensors));
+  urdf::CameraSharedPtr camera = urdf::getSensor<urdf::Camera>("camera1", sensors);
+  ASSERT_TRUE((bool)camera);
+  EXPECT_EQ(camera->width, 640u);
+  EXPECT_EQ(camera->height, 480u);
+  EXPECT_EQ(camera->format, "RGB8");
+  EXPECT_EQ(camera->hfov, 1.5708);
+  EXPECT_EQ(camera->near, 0.01);
+  EXPECT_EQ(camera->far, 50.0);
+
+  EXPECT_TRUE(!urdf::getSensor<urdf::Camera>("ray1", sensors));
+  urdf::RaySharedPtr ray = urdf::getSensor<urdf::Ray>("ray1", sensors);
+  ASSERT_TRUE((bool)ray);
+  EXPECT_EQ(ray->horizontal_samples, 100u);
+  EXPECT_EQ(ray->horizontal_resolution, 1);
+  EXPECT_EQ(ray->horizontal_min_angle, -1.5708);
+  EXPECT_EQ(ray->horizontal_max_angle, +1.5708);
+
+  EXPECT_EQ(ray->vertical_samples, 1u);
+  EXPECT_EQ(ray->vertical_resolution, 1);
+  EXPECT_EQ(ray->vertical_min_angle, 0);
+  EXPECT_EQ(ray->vertical_max_angle, 0);
 }

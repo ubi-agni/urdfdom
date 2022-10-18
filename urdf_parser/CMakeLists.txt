@@ -37,16 +37,6 @@ endif()
 
 add_urdfdom_library(
   LIBNAME
-    urdfdom_world
-  SOURCES
-    src/pose.cpp
-    src/model.cpp
-    src/link.cpp
-    src/joint.cpp
-    src/world.cpp)
-
-add_urdfdom_library(
-  LIBNAME
     urdfdom_model
   SOURCES
     src/pose.cpp
@@ -56,9 +46,18 @@ add_urdfdom_library(
 
 add_urdfdom_library(
   LIBNAME
+    urdfdom_world
+  SOURCES
+    src/world.cpp
+  LINK
+    urdfdom_model)
+
+add_urdfdom_library(
+  LIBNAME
     urdfdom_sensor
   SOURCES
-    src/urdf_sensor.cpp
+    src/sensor_parser.cpp
+    src/visual_sensor_parsers.cpp
   LINK
     urdfdom_model)
 
